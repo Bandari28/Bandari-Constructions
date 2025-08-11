@@ -23,7 +23,7 @@ export default function PropertyManagement({
                 throw new Error('Authentication token not found');
             }
 
-            const res = await fetch(`http://localhost:5000/properties/${id}`, {
+            const res = await fetch(`https://bandari-constructions.onrender.com/properties/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

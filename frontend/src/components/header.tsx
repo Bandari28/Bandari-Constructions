@@ -1,153 +1,220 @@
 import { useEffect, useState } from 'react';
 import { Plus, Settings } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // ✅ Check token on load
+  // ✅ Check token on load (using state instead of localStorage for demo)
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
+    // Simulating token check - in real app this would be localStorage.getItem('token')
+    setIsLoggedIn(true); // Set to true for demo purposes
   }, []);
 
   // ✅ Toggle login/logout
   const handleLoginToggle = () => {
     if (isLoggedIn) {
-      localStorage.removeItem('token');
+      // In real app: localStorage.removeItem('token');
       setIsLoggedIn(false);
-      navigate('/login');
+      // navigate('/login');
     } else {
-      navigate('/login');
+      // navigate('/login');
     }
   };
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const handleLinkClick = () => {
+    setIsMobileMenuOpen(false); // Close mobile menu when link is clicked
+  };
+
   return (
-    <nav className="flex items-center justify-between px-4 py-3 bg-white shadow-md md:px-6">
-      {/* Left Section */}
-      <div className="flex items-center space-x-3">
-        {/* Icon */}
-        <div className="bg-gradient-to-br from-purple-600 to-blue-600 p-2 rounded-xl shadow-lg flex items-center justify-center md:p-3">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-            fill="none"
-            stroke="white"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="lucide lucide-bc md:w-7 md:h-7"
-          >
-            <text
-              x="50%"
-              y="50%"
-              dominantBaseline="middle"
-              textAnchor="middle"
-              fontFamily="Arial, sans-serif"
-              fontSize="12"
+    <nav className="relative bg-white shadow-md">
+      <div className="flex items-center justify-between px-4 py-3 md:px-6">
+        {/* Left Section - Logo */}
+        <div className="flex items-center space-x-3 flex-shrink-0">
+          {/* Icon */}
+          <div className="bg-gradient-to-br from-purple-600 to-blue-600 p-2 rounded-xl shadow-lg flex items-center justify-center md:p-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
               fill="none"
               stroke="white"
-              strokeWidth="1"
-              className="md:text-[14px]"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-6 h-6 md:w-7 md:h-7"
             >
-              BC
-            </text>
-          </svg>
+              <text
+                x="50%"
+                y="50%"
+                dominantBaseline="middle"
+                textAnchor="middle"
+                fontFamily="Arial, sans-serif"
+                fontSize="12"
+                fill="white"
+                className="md:text-sm font-semibold"
+              >
+                BC
+              </text>
+            </svg>
+          </div>
+
+          {/* Text */}
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-purple-600 tracking-tight md:text-xl whitespace-nowrap">
+              Bandari <span className="text-gray-800">Constructions</span>
+            </h1>
+            <p className="text-gray-500 text-xs tracking-wide md:text-sm whitespace-nowrap">
+              Real Estate Excellence
+            </p>
+          </div>
         </div>
 
-        {/* Text */}
-        <div>
-          <h1 className="text-lg font-semibold text-purple-600 tracking-tight md:text-xl">
-            Bandari <span className="text-gray-800">Constructions</span>
-          </h1>
-          <p className="text-gray-500 text-xs tracking-wide md:text-sm">
-            Real Estate Excellence
-          </p>
-        </div>
-      </div>
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center space-x-6">
+          {/* Navigation Links */}
+          <div className="flex items-center space-x-6">
+            <a
+              href="/"
+              className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 transition-all duration-200"
+            >
+              Properties
+            </a>
+            <a
+              href="/about"
+              className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 transition-all duration-200"
+            >
+              About
+            </a>
+            <a
+              href="/contact"
+              className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 transition-all duration-200"
+            >
+              Contact
+            </a>
+          </div>
 
-      {/* Hamburger Menu for Mobile */}
-      <button
-        className="md:hidden text-gray-700 focus:outline-none"
-        onClick={toggleMobileMenu}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d={isMobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
-          />
-        </svg>
-      </button>
-
-      {/* Middle Links and Right Buttons (Desktop and Mobile) */}
-      <div
-        className={`flex-col md:flex-row md:flex md:items-center md:space-x-6 ${isMobileMenuOpen ? 'flex' : 'hidden'
-          } absolute md:static top-16 left-0 w-full md:w-auto bg-white md:bg-transparent shadow-md md:shadow-none p-4 md:p-0 z-10`}
-      >
-        {/* Middle Links */}
-        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6">
-          <Link
-            to="/"
-            className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 text-center"
-          >
-            Properties
-          </Link>
-          <Link
-            to="/about"
-            className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 text-center"
-          >
-            About
-          </Link>
-          <Link
-            to="/contact"
-            className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 text-center"
-          >
-            Contact
-          </Link>
-        </div>
-
-        {/* Right Buttons */}
-        <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 mt-4 md:mt-0">
-          {isLoggedIn && (
-            <>
-              <Link to="/adminpanel">
-                <button className="flex items-center px-3 py-1.5 border border-purple-500 text-purple-600 rounded-md hover:bg-gradient-to-br from-purple-600 to-blue-600 hover:text-white w-full md:w-auto justify-center">
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-3">
+            {isLoggedIn && (
+              <>
+                <button className="flex items-center px-3 py-1.5 border border-purple-500 text-purple-600 rounded-md hover:bg-gradient-to-br from-purple-600 to-blue-600 hover:text-white transition-all duration-200">
                   <Settings className="w-4 h-4 mr-2" />
                   Admin Panel
                 </button>
-              </Link>
-              <Link to="/addproperty">
-                <button className="flex items-center px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transition w-full md:w-auto justify-center">
+                <button className="flex items-center px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transition-all duration-200">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Property
                 </button>
-              </Link>
-            </>
-          )}
-          <button
-            onClick={handleLoginToggle}
-            className={`px-3 py-1.5 rounded-md font-medium transition-colors duration-200 w-full md:w-auto text-center ${isLoggedIn
-              ? 'bg-red-100 text-red-600 hover:bg-red-200'
-              : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+              </>
+            )}
+            <button
+              onClick={handleLoginToggle}
+              className={`px-4 py-1.5 rounded-md font-medium transition-all duration-200 ${
+                isLoggedIn
+                  ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                  : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
               }`}
+            >
+              {isLoggedIn ? 'Logout' : 'Login'}
+            </button>
+          </div>
+        </div>
+
+        {/* Hamburger Menu Button */}
+        <button
+          className="md:hidden text-gray-700 focus:outline-none p-1"
+          onClick={toggleMobileMenu}
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            {isLoggedIn ? 'Logout' : 'Login'}
-          </button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d={isMobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      <div
+        className={`md:hidden transition-all duration-300 ease-in-out ${
+          isMobileMenuOpen 
+            ? 'max-h-96 opacity-100' 
+            : 'max-h-0 opacity-0 overflow-hidden'
+        }`}
+      >
+        <div className="bg-white border-t border-gray-100 shadow-lg">
+          <div className="px-4 py-3 space-y-3">
+            {/* Navigation Links */}
+            <div className="space-y-2">
+              <a
+                href="/"
+                onClick={handleLinkClick}
+                className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-md px-3 py-2 transition-all duration-200"
+              >
+                Properties
+              </a>
+              <a
+                href="/about"
+                onClick={handleLinkClick}
+                className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-md px-3 py-2 transition-all duration-200"
+              >
+                About
+              </a>
+              <a
+                href="/contact"
+                onClick={handleLinkClick}
+                className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-md px-3 py-2 transition-all duration-200"
+              >
+                Contact
+              </a>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-3 border-t border-gray-100">
+              {isLoggedIn && (
+                <>
+                  <button 
+                    onClick={handleLinkClick}
+                    className="w-full flex items-center justify-center px-3 py-2 border border-purple-500 text-purple-600 rounded-md hover:bg-gradient-to-br from-purple-600 to-blue-600 hover:text-white transition-all duration-200"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Admin Panel
+                  </button>
+                  <button 
+                    onClick={handleLinkClick}
+                    className="w-full flex items-center justify-center px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transition-all duration-200"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Property
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleLoginToggle}
+                className={`w-full px-3 py-2 rounded-md font-medium transition-all duration-200 ${
+                  isLoggedIn
+                    ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                    : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                }`}
+              >
+                {isLoggedIn ? 'Logout' : 'Login'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </nav>

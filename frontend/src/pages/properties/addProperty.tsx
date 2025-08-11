@@ -156,7 +156,7 @@ export default function AddProperty() {
         const token = localStorage.getItem('token');
 
         try {
-            const res = await fetch('http://localhost:5000/addproperties', {
+            const res = await fetch('https://bandari-constructions.onrender.com/addproperties', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}` // if using auth

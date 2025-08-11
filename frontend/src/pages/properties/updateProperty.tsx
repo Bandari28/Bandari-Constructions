@@ -59,7 +59,7 @@ export default function UpdateProperty() {
     useEffect(() => {
         const fetchProperty = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/properties/${id}`);
+                const res = await fetch(`https://bandari-constructions.onrender.com/properties/${id}`);
                 if (!res.ok) throw new Error("Failed to fetch property");
                 const data = await res.json();
                 setProperty(data);
@@ -172,7 +172,7 @@ export default function UpdateProperty() {
         const token = localStorage.getItem('token');
 
         try {
-            const res = await fetch(`http://localhost:5000/properties/${property._id}`, {
+            const res = await fetch(`https://bandari-constructions.onrender.com/properties/${property._id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`

@@ -13,8 +13,7 @@ export default function ComingSoon() {
               viewBox="0 0 24 24"
               width="24"
               height="24"
-              sm:width="28"
-              sm:height="28"
+              
               fill="none"
               stroke="white"
               strokeWidth="1.5"
@@ -29,7 +28,6 @@ export default function ComingSoon() {
                 textAnchor="middle"
                 fontFamily="Arial, sans-serif"
                 fontSize="12"
-                sm:fontSize="14"
                 fill="none"
                 stroke="white"
                 strokeWidth="1"

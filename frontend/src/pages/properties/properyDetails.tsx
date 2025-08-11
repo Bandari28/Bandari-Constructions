@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { useParams } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, MapPin, Home, Bed, Bath, Car,
@@ -24,7 +24,7 @@ export default function PropertyDetails() {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/properties/${id}`);
+        const res = await fetch(`https://bandari-constructions.onrender.com/properties/${id}`);
         if (!res.ok) throw new Error("Failed to fetch property");
         const data = await res.json();
         setProperty(data);

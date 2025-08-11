@@ -1,4 +1,4 @@
-import { Award, MessageCircle, ShieldCheck, Star, Home as HomeIcon } from "lucide-react";
+import { Award,  ShieldCheck, Star, Home as HomeIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function About() {
