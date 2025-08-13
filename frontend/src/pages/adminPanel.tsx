@@ -1,6 +1,6 @@
 import { Edit2, Trash2, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { Property } from "./properties/properties";
+import type { Property } from "./properties/addProperty";
 
 interface PropertyManagementProps {
     properties: Property[];
@@ -23,7 +23,7 @@ export default function PropertyManagement({
                 throw new Error('Authentication token not found');
             }
 
-            const res = await fetch(`https://bandari-constructions.onrender.com/properties/${id}`, {
+            const res = await fetch(`http://localhost:5000/properties/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -80,8 +80,73 @@ export default function PropertyManagement({
 
                     <div className="divide-y divide-gray-100">
                         {properties.map((property) => (
-                            <div key={property._id} className="p-6">
-                                <div className="flex items-center gap-4">
+                            <div key={property._id} className="p-4 sm:p-6">
+                                {/* Mobile Layout (visible only on mobile) */}
+                                <div className="block sm:hidden space-y-4">
+                                    {/* Image and Title Row */}
+                                    <div className="flex gap-3">
+                                        <div className="flex-shrink-0">
+                                            {property.images?.length > 0 ? (
+                                                <img
+                                                    src={`data:${property.images[0].contentType};base64,${property.images[0].data}`}
+                                                    alt={property.images[0].alt || property.title}
+                                                    className="w-16 h-16 rounded-lg object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-16 h-16 bg-gray-200 rounded-lg" />
+                                            )}
+                                        </div>
+                                        <div className="flex-grow min-w-0">
+                                            <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">
+                                                {property.title}
+                                            </h3>
+                                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                                {property.location.street}, {property.location.city}
+                                            </p>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-lg font-bold text-blue-600">
+                                                    ${property.price.toLocaleString()}
+                                                </p>
+                                                <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                                    Available
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Property Details */}
+                                    <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                        <span className="bg-gray-100 px-2 py-1 rounded">
+                                            {property.propertyDetails.bedrooms} beds
+                                        </span>
+                                        <span className="bg-gray-100 px-2 py-1 rounded">
+                                            {property.propertyDetails.bathrooms} baths
+                                        </span>
+                                        <span className="bg-gray-100 px-2 py-1 rounded">
+                                            {property.propertyDetails.squareYards} sq yards
+                                        </span>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2 pt-2">
+                                        <Link to={`/updateproperty/${property._id}`} className="flex-1">
+                                            <button className="w-full px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-200 hover:border-purple-200">
+                                                <Edit2 size={14} />
+                                                <span className="text-sm font-medium">Edit Property</span>
+                                            </button>
+                                        </Link>
+                                        <button
+                                            onClick={() => handleDelete(property._id)}
+                                            className="px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-gray-200 hover:border-red-200"
+                                            title="Delete Property"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Desktop/Tablet Layout (hidden on mobile) */}
+                                <div className="hidden sm:flex items-center gap-4">
                                     <div className="flex-shrink-0">
                                         {property.images?.length > 0 ? (
                                             <img

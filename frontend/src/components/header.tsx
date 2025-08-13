@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link ,useNavigate } from 'react-router-dom';
 import { Plus, Settings } from 'lucide-react';
 
 export default function Header() {
+    let navigate = useNavigate();
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -16,9 +19,9 @@ export default function Header() {
     if (isLoggedIn) {
       // In real app: localStorage.removeItem('token');
       setIsLoggedIn(false);
-      // navigate('/login');
+      navigate('/login');
     } else {
-      // navigate('/login');
+      navigate('/login');
     }
   };
 
@@ -79,47 +82,52 @@ export default function Header() {
         <div className="hidden md:flex items-center space-x-6">
           {/* Navigation Links */}
           <div className="flex items-center space-x-6">
-            <a
-              href="/"
+            <Link
+              to="/"
               className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 transition-all duration-200"
             >
               Properties
-            </a>
-            <a
-              href="/about"
+            </Link>
+            <Link
+              to="/about"
               className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 transition-all duration-200"
             >
               About
-            </a>
-            <a
-              href="/contact"
+            </Link>
+            <Link
+              to="/contact"
               className="text-gray-700 hover:text-purple-600 hover:border border-purple-500 rounded-md px-3 py-1.5 transition-all duration-200"
             >
               Contact
-            </a>
+            </Link>
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-3">
             {isLoggedIn && (
               <>
-                <button className="flex items-center px-3 py-1.5 border border-purple-500 text-purple-600 rounded-md hover:bg-gradient-to-br from-purple-600 to-blue-600 hover:text-white transition-all duration-200">
+                <Link
+                  to="/adminpanel"
+                  className="flex items-center px-3 py-1.5 border border-purple-500 text-purple-600 rounded-md hover:bg-gradient-to-br from-purple-600 to-blue-600 hover:text-white transition-all duration-200"
+                >
                   <Settings className="w-4 h-4 mr-2" />
                   Admin Panel
-                </button>
-                <button className="flex items-center px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transition-all duration-200">
+                </Link>
+                <Link
+                  to="/addproperty"
+                  className="flex items-center px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transition-all duration-200"
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Property
-                </button>
+                </Link>
               </>
             )}
             <button
               onClick={handleLoginToggle}
-              className={`px-4 py-1.5 rounded-md font-medium transition-all duration-200 ${
-                isLoggedIn
+              className={`px-4 py-1.5 rounded-md font-medium transition-all duration-200 ${isLoggedIn
                   ? 'bg-red-100 text-red-600 hover:bg-red-200'
                   : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
-              }`}
+                }`}
             >
               {isLoggedIn ? 'Logout' : 'Login'}
             </button>
@@ -150,66 +158,66 @@ export default function Header() {
 
       {/* Mobile Menu */}
       <div
-        className={`md:hidden transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen 
-            ? 'max-h-96 opacity-100' 
+        className={`md:hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen
+            ? 'max-h-96 opacity-100'
             : 'max-h-0 opacity-0 overflow-hidden'
-        }`}
+          }`}
       >
         <div className="bg-white border-t border-gray-100 shadow-lg">
           <div className="px-4 py-3 space-y-3">
             {/* Navigation Links */}
             <div className="space-y-2">
-              <a
-                href="/"
+              <Link
+                to="/"
                 onClick={handleLinkClick}
                 className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-md px-3 py-2 transition-all duration-200"
               >
                 Properties
-              </a>
-              <a
-                href="/about"
+              </Link>
+              <Link
+                to="/about"
                 onClick={handleLinkClick}
                 className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-md px-3 py-2 transition-all duration-200"
               >
                 About
-              </a>
-              <a
-                href="/contact"
+              </Link>
+              <Link
+                to="/contact"
                 onClick={handleLinkClick}
                 className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-md px-3 py-2 transition-all duration-200"
               >
                 Contact
-              </a>
+              </Link>
             </div>
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-3 border-t border-gray-100">
               {isLoggedIn && (
                 <>
-                  <button 
+                  <Link
+                    to="/adminpanel"
                     onClick={handleLinkClick}
                     className="w-full flex items-center justify-center px-3 py-2 border border-purple-500 text-purple-600 rounded-md hover:bg-gradient-to-br from-purple-600 to-blue-600 hover:text-white transition-all duration-200"
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Admin Panel
-                  </button>
-                  <button 
+                  </Link>
+                  <Link
+                    to="/addproperty"
                     onClick={handleLinkClick}
                     className="w-full flex items-center justify-center px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transition-all duration-200"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Property
-                  </button>
+                  </Link>
                 </>
               )}
               <button
                 onClick={handleLoginToggle}
-                className={`w-full px-3 py-2 rounded-md font-medium transition-all duration-200 ${
-                  isLoggedIn
+                className={`w-full px-3 py-2 rounded-md font-medium transition-all duration-200 ${isLoggedIn
                     ? 'bg-red-100 text-red-600 hover:bg-red-200'
                     : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
-                }`}
+                  }`}
               >
                 {isLoggedIn ? 'Logout' : 'Login'}
               </button>

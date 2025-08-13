@@ -17,9 +17,21 @@ router.get('/properties', getAllProperties);
 router.get('/properties/:id', getPropertyById);
 
 
-router.post('/addproperties', auth, upload.array('images'), createProperty);
-
-router.put('/properties/:id', auth, upload.array('images'), updateProperty);
+router.post('/addproperties',
+  auth,
+  upload.fields([
+    { name: 'images', maxCount: 10 },    // For multiple images
+    { name: 'homeImage', maxCount: 1 }   // For single home image
+  ]),
+  createProperty
+);
+router.put(
+  '/properties/:id',
+  auth, upload.fields([
+    { name: 'images', maxCount: 10 },    // For multiple images
+    { name: 'homeImage', maxCount: 1 }   // For single home image
+  ]),
+  updateProperty);
 
 router.delete('/properties/:id', auth, deleteProperty);
 

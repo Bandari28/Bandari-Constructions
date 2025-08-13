@@ -4,7 +4,7 @@ const PropertySchema = new mongoose.Schema({
   title: { type: String, }, // Property Title
   price: { type: Number, required: true }, // Property Price
   propertyType: { type: String, required: true }, // Type of Property (e.g., Apartment, House)
-  googleMap:{type: String, required: true}, // Google Map Link
+  googleMap: { type: String, required: true }, // Google Map Link
   location: {
     street: { type: String, required: true }, // Street Address
     city: { type: String, required: true }, // City
@@ -25,6 +25,15 @@ const PropertySchema = new mongoose.Schema({
     possessionStatus: { type: String, required: true }, // Possession Status (e.g., Ready to Move, Under Construction)
     yearBuilt: { type: Number, required: true }, // Year Built
 
+  },
+
+  homeImage: {
+    data: { type: String, required: true },
+    contentType: { type: String, required: true },
+    filename: { type: String, required: true },
+    size: { type: Number },
+    alt: { type: String },
+    uploadDate: { type: Date, default: Date.now }
   },
 
   images: [{

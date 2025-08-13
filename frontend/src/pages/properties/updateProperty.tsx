@@ -1,46 +1,54 @@
 import { Edit, Home, MapPin, Info, Star, Phone, Camera } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-
 interface Property {
-    _id: string;
+    _id?: string;
     title: string;
     price: number;
     propertyType: string;
+    googleMap: string;
     location: {
         street: string;
         city: string;
         state: string;
-        zipCode: string;
         country: string;
+        zipCode: string;
     };
-    googleMap: string;
     propertyDetails: {
         bedrooms: number;
         bathrooms: number;
         squareYards: number;
         parkingSpaces: string;
         direction: string;
-        yearBuilt: string;
         furnishingStatus: string;
         possessionStatus: string;
+        yearBuilt: number;
     };
-    images: {
-        data: string;
-        contentType: string;
-        filename: string;
-        size: number;
-        alt: string;
-        isPrimary: boolean;
-        _id: string;
-    }[];
     contactInfo: {
         contactName: string;
         phoneNumber: string;
         emailAddress: string;
     };
+    homeImage?: {
+        _id?: string;
+        data: string;
+        contentType: string;
+        filename: string;
+        size: number;
+        alt?: string;
+        uploadDate?: Date;
+    };
+    images?: Array<{
+        _id?: string;
+        data: string;
+        contentType: string;
+        filename: string;
+        size: number;
+        alt?: string;
+        isPrimary?: boolean;
+        uploadDate?: Date;
+    }>;
 }
-
 interface ImageFile extends File {
     preview?: string;
     _id?: string;
@@ -54,16 +62,19 @@ export default function UpdateProperty() {
     const [property, setProperty] = useState<Property | null>(null);
     const [existingImages, setExistingImages] = useState<any[]>([]);
     const [newImages, setNewImages] = useState<ImageFile[]>([]);
+    const [existingHomeImage, setExistingHomeImage] = useState<any>(null);
+    const [newHomeImage, setNewHomeImage] = useState<ImageFile | null>(null);
 
     // Fetch property data when component mounts
     useEffect(() => {
         const fetchProperty = async () => {
             try {
-                const res = await fetch(`https://bandari-constructions.onrender.com/properties/${id}`);
+                const res = await fetch(`http://localhost:5000/properties/${id}`);
                 if (!res.ok) throw new Error("Failed to fetch property");
                 const data = await res.json();
                 setProperty(data);
                 setExistingImages(data.images || []);
+                setExistingHomeImage(data.homeImage || null);
             } catch (error) {
                 console.error(error);
                 alert("Failed to load property data");
@@ -75,12 +86,9 @@ export default function UpdateProperty() {
     const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const files = Array.from(e.target.files);
-
-            // Validate files
             const validFiles = files.filter(file => {
                 const isImage = file.type.startsWith('image/');
-                const isSizeValid = file.size <= 10 * 1024 * 1024; // 10MB
-
+                const isSizeValid = file.size <= 10 * 1024 * 1024;
                 if (!isImage) {
                     alert(`${file.name} is not an image file`);
                     return false;
@@ -92,7 +100,6 @@ export default function UpdateProperty() {
                 return true;
             });
 
-            // Create previews and add to new images
             const filesWithPreview = validFiles.map(file => {
                 return Object.assign(file, {
                     preview: URL.createObjectURL(file)
@@ -103,12 +110,40 @@ export default function UpdateProperty() {
         }
     };
 
+    const handleHomeImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const isImage = file.type.startsWith('image/');
+            const isSizeValid = file.size <= 10 * 1024 * 1024;
+
+            if (!isImage) {
+                alert(`${file.name} is not an image file`);
+                return;
+            }
+            if (!isSizeValid) {
+                alert(`${file.name} is too large (max 10MB)`);
+                return;
+            }
+
+            const fileWithPreview = Object.assign(file, {
+                preview: URL.createObjectURL(file)
+            });
+
+            setNewHomeImage(fileWithPreview);
+        }
+    };
+
     const removeImage = (index: number, isNew: boolean) => {
         if (isNew) {
             setNewImages(prev => prev.filter((_, i) => i !== index));
         } else {
             setExistingImages(prev => prev.filter((_, i) => i !== index));
         }
+    };
+
+    const removeHomeImage = () => {
+        setNewHomeImage(null);
+        setExistingHomeImage(null);
     };
 
     type PropertySections = 'location' | 'propertyDetails' | 'contactInfo';
@@ -132,47 +167,48 @@ export default function UpdateProperty() {
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        console.log('dsfad');
+        
         e.preventDefault();
         if (!property) return;
 
         const formData = new FormData();
+        formData.append('title', property?.title);
+        formData.append('price', property?.price.toString());
+        formData.append('propertyType', property?.propertyType);
 
-        // Add property fields
-        formData.append('title', property.title);
-        formData.append('price', property.price.toString());
-        formData.append('propertyType', property.propertyType);
-
-        // Add nested location fields
-        Object.entries(property.location).forEach(([key, value]) => {
+        Object.entries(property?.location).forEach(([key, value]) => {
             formData.append(`location[${key}]`, value);
         });
 
-        // Add nested propertyDetails fields
-        Object.entries(property.propertyDetails).forEach(([key, value]) => {
+        Object.entries(property?.propertyDetails).forEach(([key, value]) => {
             formData.append(`propertyDetails[${key}]`, value.toString());
         });
 
-        // Add contactInfo fields
-        Object.entries(property.contactInfo).forEach(([key, value]) => {
+        Object.entries(property?.contactInfo).forEach(([key, value]) => {
             formData.append(`contactInfo[${key}]`, value);
         });
 
-        // Add new images
         newImages.forEach((file) => {
             formData.append('images', file);
         });
 
-        // Add existing image IDs to keep
         existingImages.forEach((image) => {
             formData.append('existingImages', image._id);
         });
 
-        formData.append('googleMap', property.googleMap);
+        if (newHomeImage) {
+            formData.append('homeImage', newHomeImage);
+        } else if (existingHomeImage) {
+            formData.append('existingHomeImage', existingHomeImage._id);
+        }
+
+        formData.append('googleMap', property?.googleMap);
 
         const token = localStorage.getItem('token');
 
         try {
-            const res = await fetch(`https://bandari-constructions.onrender.com/properties/${property._id}`, {
+            const res = await fetch(`http://localhost:5000/properties/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -184,18 +220,14 @@ export default function UpdateProperty() {
             if (!res.ok) throw new Error(data.message || "Failed to update property");
 
             alert("Property updated successfully!");
-            navigate('/'); // Redirect to properties list
+            navigate('/');
         } catch (error) {
             console.error(error);
             alert("Failed to update property");
         }
     };
 
-    if (!property) {
-        return <div className="min-h-screen flex items-center justify-center">
-            <p className="text-xl">Loading property data...</p>
-        </div>;
-    }
+  
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-white p-4 sm:p-6 lg:p-8 font-inter">
@@ -217,12 +249,11 @@ export default function UpdateProperty() {
                                     type="text"
                                     id="title"
                                     name="title"
-                                    value={property.title}
+                                    value={property?.title}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
                             </div>
-
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
                                     <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
@@ -232,7 +263,7 @@ export default function UpdateProperty() {
                                         type="number"
                                         id="price"
                                         name="price"
-                                        value={property.price}
+                                        value={property?.price}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
@@ -244,7 +275,7 @@ export default function UpdateProperty() {
                                     <select
                                         id="propertyType"
                                         name="propertyType"
-                                        value={property.propertyType}
+                                        value={property?.propertyType}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 bg-white appearance-none transition-colors duration-200"
                                     >
@@ -271,7 +302,7 @@ export default function UpdateProperty() {
                                         type="text"
                                         id="street"
                                         name="location.street"
-                                        value={property.location.street}
+                                        value={property?.location.street}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
@@ -284,7 +315,7 @@ export default function UpdateProperty() {
                                         type="text"
                                         id="city"
                                         name="location.city"
-                                        value={property.location.city}
+                                        value={property?.location.city}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
@@ -299,7 +330,7 @@ export default function UpdateProperty() {
                                         type="text"
                                         id="state"
                                         name="location.state"
-                                        value={property.location.state}
+                                        value={property?.location.state}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
@@ -312,7 +343,7 @@ export default function UpdateProperty() {
                                         type="text"
                                         id="country"
                                         name="location.country"
-                                        value={property.location.country}
+                                        value={property?.location.country}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
@@ -327,7 +358,7 @@ export default function UpdateProperty() {
                                         type="text"
                                         id="zipCode"
                                         name="location.zipCode"
-                                        value={property.location.zipCode}
+                                        value={property?.location.zipCode}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
@@ -340,13 +371,13 @@ export default function UpdateProperty() {
                                         type="text"
                                         id="googleMap"
                                         name="googleMap"
-                                        value={property.googleMap}
+                                        value={property?.googleMap}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
-                                    {property.googleMap && (
+                                    {property?.googleMap && (
                                         <a
-                                            href={property.googleMap}
+                                            href={property?.googleMap}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="mt-2 inline-block text-blue-600 hover:underline"
@@ -370,7 +401,7 @@ export default function UpdateProperty() {
                                     type="number"
                                     id="bedrooms"
                                     name="propertyDetails.bedrooms"
-                                    value={property.propertyDetails.bedrooms}
+                                    value={property?.propertyDetails.bedrooms}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -383,7 +414,7 @@ export default function UpdateProperty() {
                                     type="number"
                                     id="bathrooms"
                                     name="propertyDetails.bathrooms"
-                                    value={property.propertyDetails.bathrooms}
+                                    value={property?.propertyDetails.bathrooms}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -396,7 +427,7 @@ export default function UpdateProperty() {
                                     type="number"
                                     id="squareYards"
                                     name="propertyDetails.squareYards"
-                                    value={property.propertyDetails.squareYards}
+                                    value={property?.propertyDetails.squareYards}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -409,7 +440,7 @@ export default function UpdateProperty() {
                                     type="text"
                                     id="parkingSpaces"
                                     name="propertyDetails.parkingSpaces"
-                                    value={property.propertyDetails.parkingSpaces}
+                                    value={property?.propertyDetails.parkingSpaces}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -422,7 +453,7 @@ export default function UpdateProperty() {
                                     type="text"
                                     id="direction"
                                     name="propertyDetails.direction"
-                                    value={property.propertyDetails.direction}
+                                    value={property?.propertyDetails.direction}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -435,7 +466,7 @@ export default function UpdateProperty() {
                                     type="number"
                                     id="yearBuilt"
                                     name="propertyDetails.yearBuilt"
-                                    value={property.propertyDetails.yearBuilt}
+                                    value={property?.propertyDetails.yearBuilt}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -453,7 +484,7 @@ export default function UpdateProperty() {
                                 <select
                                     id="furnishingStatus"
                                     name="propertyDetails.furnishingStatus"
-                                    value={property.propertyDetails.furnishingStatus}
+                                    value={property?.propertyDetails.furnishingStatus}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 bg-white appearance-none transition-colors duration-200"
                                 >
@@ -470,7 +501,7 @@ export default function UpdateProperty() {
                                 <select
                                     id="possessionStatus"
                                     name="propertyDetails.possessionStatus"
-                                    value={property.propertyDetails.possessionStatus}
+                                    value={property?.propertyDetails.possessionStatus}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 bg-white appearance-none transition-colors duration-200"
                                 >
@@ -481,13 +512,60 @@ export default function UpdateProperty() {
                         </div>
                         <SectionDivider />
 
+                        {/* Home Image Section */}
+                        <div className="space-y-6 mb-10">
+                            <SectionHeader icon={<Camera size={22} className="text-blue-500" />} title="Home Image" />
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-600 mb-2">Upload home image</p>
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Primary home image (Max 10MB)
+                                </p>
+                                <input
+                                    type="file"
+                                    name="homeImage"
+                                    accept="image/*"
+                                    className="mt-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    onChange={handleHomeImage}
+                                />
+                            </div>
+                            {(existingHomeImage || newHomeImage) && (
+                                <div className="mt-4">
+                                    <h3 className="text-sm font-medium text-gray-700 mb-2">Selected Home Image</h3>
+                                    <div className="relative group border rounded-md p-2 w-48">
+                                        <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
+                                            <img
+                                                src={newHomeImage ? newHomeImage.preview : `data:${existingHomeImage.contentType};base64,${existingHomeImage.data}`}
+                                                alt={newHomeImage ? newHomeImage.name : existingHomeImage.filename}
+                                                className="object-cover w-full h-full"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={removeHomeImage}
+                                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition-opacity"
+                                            aria-label={`Remove ${newHomeImage ? newHomeImage.name : existingHomeImage.filename}`}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        <div className="mt-2">
+                                            <p className="text-xs font-medium text-gray-700 truncate">{newHomeImage ? newHomeImage.name : existingHomeImage.filename}</p>
+                                            <p className="text-xs text-gray-500">{((newHomeImage ? newHomeImage.size : existingHomeImage.size) / 1024 / 1024).toFixed(2)} MB</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <SectionDivider />
+
                         {/* Property Images Section */}
                         <div className="space-y-6">
                             <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
                                 <Camera className="w-5 h-5 mr-2" />
                                 Property Images
                             </h2>
-
                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                                 <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                                 <p className="text-gray-600 mb-2">Upload new property images</p>
@@ -503,21 +581,18 @@ export default function UpdateProperty() {
                                     onChange={handleImages}
                                 />
                             </div>
-
-                            {/* Display existing and new images */}
                             {(existingImages.length > 0 || newImages.length > 0) && (
                                 <div className="mt-4">
                                     <h3 className="text-sm font-medium text-gray-700 mb-2">
                                         Current Images ({existingImages.length + newImages.length}/10)
                                     </h3>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                        {/* Existing images from database */}
                                         {existingImages.map((image, index) => (
                                             <div key={image._id} className="relative group border rounded-md p-2">
                                                 <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
                                                     <img
                                                         src={`data:${image.contentType};base64,${image.data}`}
-                                                        alt={image.alt}
+                                                        alt={image.filename}
                                                         className="object-cover w-full h-full"
                                                     />
                                                 </div>
@@ -537,8 +612,6 @@ export default function UpdateProperty() {
                                                 </div>
                                             </div>
                                         ))}
-
-                                        {/* Newly uploaded images */}
                                         {newImages.map((file, index) => (
                                             <div key={index} className="relative group border rounded-md p-2">
                                                 <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
@@ -568,6 +641,7 @@ export default function UpdateProperty() {
                                 </div>
                             )}
                         </div>
+                        <SectionDivider />
 
                         {/* Contact Information Section */}
                         <SectionHeader icon={<Phone size={22} className="text-emerald-500" />} title="Contact Information" />
@@ -580,7 +654,7 @@ export default function UpdateProperty() {
                                     type="text"
                                     id="contactName"
                                     name="contactInfo.contactName"
-                                    value={property.contactInfo.contactName}
+                                    value={property?.contactInfo.contactName}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -593,7 +667,7 @@ export default function UpdateProperty() {
                                     type="tel"
                                     id="phoneNumber"
                                     name="contactInfo.phoneNumber"
-                                    value={property.contactInfo.phoneNumber}
+                                    value={property?.contactInfo.phoneNumber}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
@@ -606,14 +680,13 @@ export default function UpdateProperty() {
                                     type="email"
                                     id="emailAddress"
                                     name="contactInfo.emailAddress"
-                                    value={property.contactInfo.emailAddress}
+                                    value={property?.contactInfo.emailAddress}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
                             </div>
                         </div>
 
-                        {/* Form Actions */}
                         <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
                             <button
                                 type="button"
@@ -636,7 +709,6 @@ export default function UpdateProperty() {
     )
 }
 
-// Section header with icon and title
 function SectionHeader({ icon, title }: { icon: React.ReactNode, title: string }) {
     return (
         <div className="flex items-center gap-2 mb-4 mt-8">
@@ -646,7 +718,6 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode, title: string }
     )
 }
 
-// Divider between sections
 function SectionDivider() {
     return <hr className="my-6 border-t border-gray-200" />
 }

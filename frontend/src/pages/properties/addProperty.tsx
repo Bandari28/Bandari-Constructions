@@ -1,7 +1,7 @@
 import { Edit, Home, MapPin, Info, Star, Phone, Camera } from 'lucide-react'
 import React, { useState } from 'react'
 
-interface Property {
+export interface Property {
     title: string;
     price: number;
     propertyType: string;
@@ -19,20 +19,21 @@ interface Property {
         squareYards: number;
         parkingSpaces: string;
         direction: string;
-        yearBuilt: string;
+        yearBuilt: number;
         furnishingStatus: string;
         possessionStatus: string;
     };
     images: File[];
+    homeImage: File | null;
     contactInfo: {
         contactName: string;
         phoneNumber: string;
         emailAddress: string;
     };
 }
-export default function AddProperty() {
 
-    const [property, setproperty] = useState<Property>({
+export default function AddProperty() {
+    const [property, setProperty] = useState<Property>({
         title: '',
         price: 0,
         propertyType: 'House',
@@ -50,10 +51,11 @@ export default function AddProperty() {
             squareYards: 0,
             parkingSpaces: '',
             direction: '',
-            yearBuilt: '',
+            yearBuilt: 0,
             furnishingStatus: 'Unfurnished',
             possessionStatus: 'Ready to Move'
         },
+        homeImage: null,
         images: [],
         contactInfo: {
             contactName: '',
@@ -65,13 +67,9 @@ export default function AddProperty() {
     const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const files = Array.from(e.target.files);
-
-            // Validate files
             const validFiles = files.filter(file => {
-                // Check if file is an image and under 10MB
                 const isImage = file.type.startsWith('image/');
-                const isSizeValid = file.size <= 10 * 1024 * 1024; // 10MB
-
+                const isSizeValid = file.size <= 10 * 1024 * 1024;
                 if (!isImage) {
                     alert(`${file.name} is not an image file`);
                     return false;
@@ -82,32 +80,57 @@ export default function AddProperty() {
                 }
                 return true;
             });
-
-            // Limit to 10 images max
             const newImages = [...property.images, ...validFiles].slice(0, 10);
-
-            setproperty(prev => ({
+            setProperty(prev => ({
                 ...prev,
                 images: newImages
             }));
+        }
+    };
 
+    const handleHomeImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const isImage = file.type.startsWith('image/');
+            const isSizeValid = file.size <= 10 * 1024 * 1024;
 
+            if (!isImage) {
+                alert(`${file.name} is not an image file`);
+                return;
+            }
+            if (!isSizeValid) {
+                alert(`${file.name} is too large (max 10MB)`);
+                return;
+            }
+
+            setProperty(prev => ({
+                ...prev,
+                homeImage: file
+            }));
         }
     };
 
     const removeImage = (index: number) => {
-        setproperty(prev => ({
+        setProperty(prev => ({
             ...prev,
             images: prev.images.filter((_, i) => i !== index)
         }));
     };
+
+    const removeHomeImage = () => {
+        setProperty(prev => ({
+            ...prev,
+            homeImage: null
+        }));
+    };
+
     type PropertySections = 'location' | 'propertyDetails' | 'contactInfo';
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         if (name.includes('.')) {
             const [section, field] = name.split('.') as [PropertySections, string];
-            setproperty((prev) => ({
+            setProperty((prev) => ({
                 ...prev,
                 [section]: {
                     ...prev[section],
@@ -115,64 +138,52 @@ export default function AddProperty() {
                 }
             }));
         } else {
-            setproperty((prev) => ({ ...prev, [name]: value }));
+            setProperty((prev) => ({ ...prev, [name]: value }));
         }
     }
-
 
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData();
-
-        // Add property fields
         formData.append('title', property.title);
         formData.append('price', property.price.toString());
         formData.append('propertyType', property.propertyType);
-
-        // Add nested location fields
         Object.entries(property.location).forEach(([key, value]) => {
             formData.append(`location[${key}]`, value);
         });
-
-        // Add nested propertyDetails fields
         Object.entries(property.propertyDetails).forEach(([key, value]) => {
             formData.append(`propertyDetails[${key}]`, value.toString());
         });
-
-        // Add contactInfo fields
         Object.entries(property.contactInfo).forEach(([key, value]) => {
             formData.append(`contactInfo[${key}]`, value);
         });
-
-        // Add images (property.images should be an array of File objects)
+        
         for (let i = 0; i < property.images.length; i++) {
             formData.append('images', property.images[i]);
         }
-
+        if (property.homeImage) {
+            formData.append('homeImage', property.homeImage);
+        }
         formData.append('googleMap', property.googleMap);
 
-        // Get token from localStorage
         const token = localStorage.getItem('token');
-
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
         try {
-            const res = await fetch('https://bandari-constructions.onrender.com/addproperties', {
+            const res = await fetch('http://localhost:5000/addproperties', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}` // if using auth
-                    // Don't set Content-Type, browser will handle it
+                    'Authorization': `Bearer ${token}`
                 },
                 body: formData
             });
 
             const data = await res.json();
-            // Handle success (e.g., show message, redirect)
             console.log("Server says:", data);
             alert("Property added successfully!");
-
-
-            // Reset form after successful submission
-            setproperty({
+            setProperty({
                 title: '',
                 price: 0,
                 propertyType: 'House',
@@ -190,11 +201,12 @@ export default function AddProperty() {
                     squareYards: 0,
                     parkingSpaces: '',
                     direction: '',
-                    yearBuilt: '',
+                    yearBuilt: 0,
                     furnishingStatus: 'Unfurnished',
                     possessionStatus: 'Ready to Move'
                 },
                 images: [],
+                homeImage: null,
                 contactInfo: {
                     contactName: '',
                     phoneNumber: '',
@@ -202,22 +214,18 @@ export default function AddProperty() {
                 }
             });
         } catch (error) {
-            // Handle error (e.g., show error message)
             console.error(error);
         }
     };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-white p-4 sm:p-6 lg:p-8 font-inter">
             <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-200 p-6 sm:p-10 lg:p-14">
                 <form onSubmit={handleSubmit}>
-
                     <div>
-                        {/* Header */}
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-8 flex items-center gap-3">
                             <Home size={32} className="text-purple-600" /> Add New Property
                         </h1>
-
-                        {/* Basic Information Section */}
                         <SectionHeader icon={<Info size={22} className="text-blue-500" />} title="Basic Information" />
                         <div className="grid grid-cols-1 gap-6 mb-10">
                             <div>
@@ -234,8 +242,6 @@ export default function AddProperty() {
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                 />
                             </div>
-
-
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
                                     <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
@@ -269,19 +275,12 @@ export default function AddProperty() {
                                         <option value="Land">Land</option>
                                     </select>
                                 </div>
-
-
-
-
                             </div>
                         </div>
                         <SectionDivider />
-
-                        {/* Location Section */}
                         <SectionHeader icon={<MapPin size={22} className="text-green-500" />} title="Location" />
                         <div className="grid grid-cols-1 gap-6 mb-10">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
                                 <div>
                                     <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-1">
                                         Street Address <span className="text-red-500">*</span>
@@ -312,7 +311,6 @@ export default function AddProperty() {
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
                                 <div>
                                     <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
                                         State <span className="text-red-500">*</span>
@@ -343,8 +341,6 @@ export default function AddProperty() {
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-
                                 <div>
                                     <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
                                         ZIP Code <span className="text-red-500">*</span>
@@ -359,7 +355,6 @@ export default function AddProperty() {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-colors duration-200"
                                     />
                                 </div>
-
                                 <div>
                                     <label htmlFor="googleMap" className="block text-sm font-medium text-gray-700 mb-1">
                                         Google Map Link <span className="text-red-500">*</span>
@@ -387,10 +382,6 @@ export default function AddProperty() {
                             </div>
                         </div>
                         <SectionDivider />
-
-
-
-                        {/* Property Details Section */}
                         <SectionHeader icon={<Star size={22} className="text-yellow-500" />} title="Property Details" />
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
                             <div>
@@ -477,9 +468,6 @@ export default function AddProperty() {
                             </div>
                         </div>
                         <SectionDivider />
-
-
-                        {/* Furnishing & Possession Status (side by side) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
                             <div>
                                 <SectionHeader icon={<Edit size={22} className="text-purple-500" />} title="Furnishing Status" />
@@ -516,33 +504,72 @@ export default function AddProperty() {
                             </div>
                         </div>
                         <SectionDivider />
-
-                        {/* Uplaod images  Section */}
-                        {/* Property Images */}
+                        <div className="space-y-6 mb-10">
+                            <SectionHeader icon={<Camera size={22} className="text-blue-500" />} title="Home Image" />
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-600 mb-2">Upload home image</p>
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Primary home image (Max 10MB)
+                                </p>
+                                <input
+                                    type="file"
+                                    name="homeImage"
+                                    accept="image/*"
+                                    className="mt-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    onChange={handleHomeImage}
+                                />
+                            </div>
+                            {property.homeImage && (
+                                <div className="mt-4">
+                                    <h3 className="text-sm font-medium text-gray-700 mb-2">Selected Home Image</h3>
+                                    <div className="relative group border rounded-md p-2 w-48">
+                                        <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
+                                            <img
+                                                src={URL.createObjectURL(property.homeImage)}
+                                                alt={property.homeImage.name}
+                                                className="object-cover w-full h-full"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={removeHomeImage}
+                                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition-opacity"
+                                            aria-label={`Remove ${property.homeImage.name}`}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        <div className="mt-2">
+                                            <p className="text-xs font-medium text-gray-700 truncate">{property.homeImage.name}</p>
+                                            <p className="text-xs text-gray-500">{(property.homeImage.size / 1024 / 1024).toFixed(2)} MB</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <SectionDivider />
                         <div className="space-y-6">
                             <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
                                 <Camera className="w-5 h-5 mr-2" />
                                 Property Images
                             </h2>
-
                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                                 <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                                 <p className="text-gray-600 mb-2">Upload property images</p>
                                 <p className="text-sm text-gray-500 mb-4">
                                     Interior, Exterior, Floor Plan, 360° View (Max 10MB per image)
                                 </p>
-
                                 <input
                                     type="file"
                                     name="images"
                                     multiple
                                     accept="image/*"
                                     className="mt-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                    onChange={handleImages}  // Use the new handler here
+                                    onChange={handleImages}
                                 />
                             </div>
-
-                            {/* Display selected files */}
                             {property.images.length > 0 && (
                                 <div className="mt-4">
                                     <h3 className="text-sm font-medium text-gray-700 mb-2">
@@ -578,9 +605,7 @@ export default function AddProperty() {
                                 </div>
                             )}
                         </div>
-
-
-                        {/* Contact Information Section */}
+                        <SectionDivider />
                         <SectionHeader icon={<Phone size={22} className="text-emerald-500" />} title="Contact Information" />
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
                             <div>
@@ -626,8 +651,6 @@ export default function AddProperty() {
                                 />
                             </div>
                         </div>
-
-                        {/* Form Actions */}
                         <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
                             <button
                                 type="button"
@@ -649,7 +672,6 @@ export default function AddProperty() {
     )
 }
 
-// Section header with icon and title
 function SectionHeader({ icon, title }: { icon: React.ReactNode, title: string }) {
     return (
         <div className="flex items-center gap-2 mb-4 mt-8">
@@ -659,7 +681,6 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode, title: string }
     )
 }
 
-// Divider between sections
 function SectionDivider() {
     return <hr className="my-6 border-t border-gray-200" />
 }

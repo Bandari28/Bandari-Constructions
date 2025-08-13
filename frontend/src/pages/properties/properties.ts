@@ -1,56 +1,87 @@
 // src/hooks/useProperties.ts
 import { useState, useEffect } from "react";
-export interface Location {
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-    zipCode: string;
-}
+// export interface Location {
+//     street: string;
+//     city: string;
+//     state: string;
+//     country: string;
+//     zipCode: string;
+// }
 
-export interface PropertyDetails {
-    bedrooms: number;
-    bathrooms: number;
-    squareYards: number;
-    parkingSpaces: string;
-    direction: string;
-    furnishingStatus: string;
-    possessionStatus: string;
-    yearBuilt: number;
-}
+// export interface PropertyDetails {
+//     bedrooms: number;
+//     bathrooms: number;
+//     squareYards: number;
+//     parkingSpaces: string;
+//     direction: string;
+//     furnishingStatus: string;
+//     possessionStatus: string;
+//     yearBuilt: number;
+// }
 
-export interface ImageData {
-    data: string;
-    contentType: string;
-    filename: string;
-    size?: number;
-    alt?: string;
-    isPrimary?: boolean;
-    uploadDate?: string;
-}
+// export interface ImageData {
+//     data: string;
+//     contentType: string;
+//     filename: string;
+//     size?: number;
+//     alt?: string;
+//     isPrimary?: boolean;
+//     uploadDate?: string;
+// }
 
-export interface ContactInfo {
-    contactName: string;
-    phoneNumber: string;
-    emailAddress: string;
-}
+// export interface ContactInfo {
+//     contactName: string;
+//     phoneNumber: string;
+//     emailAddress: string;
+// }
 
-export interface Property {
-    _id: string;
+// export interface Property {
+//     _id: string;
+//     title: string;
+//     price: number;
+//     propertyType: string;
+//     location: Location;
+//     propertyDetails: PropertyDetails;
+//     images: ImageData[];
+//     contactInfo: ContactInfo;
+// }
+
+// export interface ApiResponse {
+//     properties: Property[];
+//     total: number;
+//     page: number;
+//     pages: number;
+// }
+
+interface Property {
     title: string;
     price: number;
     propertyType: string;
-    location: Location;
-    propertyDetails: PropertyDetails;
-    images: ImageData[];
-    contactInfo: ContactInfo;
-}
-
-export interface ApiResponse {
-    properties: Property[];
-    total: number;
-    page: number;
-    pages: number;
+    location: {
+        street: string;
+        city: string;
+        state: string;
+        zipCode: string;
+        country: string;
+    };
+    googleMap: string;
+    propertyDetails: {
+        bedrooms: number;
+        bathrooms: number;
+        squareYards: number;
+        parkingSpaces: string;
+        direction: string;
+        yearBuilt: string;
+        furnishingStatus: string;
+        possessionStatus: string;
+    };
+    images: File[];
+    homeImage: File | null;
+    contactInfo: {
+        contactName: string;
+        phoneNumber: string;
+        emailAddress: string;
+    };
 }
 const useProperties = () => {
     const [properties, setProperties] = useState<Property[]>([]);
@@ -58,7 +89,7 @@ const useProperties = () => {
     useEffect(() => {
         const fetchProperties = async () => {
             try {
-                const res = await fetch("https://bandari-constructions.onrender.com/properties");
+                const res = await fetch("http://localhost:5000/properties");
                 if (!res.ok) throw new Error("Failed to fetch properties");
                 const data = await res.json();
                 setProperties(data.properties);

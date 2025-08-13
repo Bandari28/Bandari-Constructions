@@ -3,24 +3,45 @@ const Property = require('../models/Property');
 exports.createProperty = async (req, res) => {
   try {
     // Validate files were uploaded
-    if (!req.files || req.files.length === 0) {
+    if (!req.files || (!req.files['homeImage'] && !req.files['images'])) {
       return res.status(400).json({ message: 'At least one image is required' });
     }
 
-    // Process all uploaded files
-    const images = req.files.map((file, index) => ({
-      data: file.buffer.toString('base64'),
-      contentType: file.mimetype,
-      filename: file.originalname,
-      size: file.size,
-      alt: req.body.alt || `Property image ${index + 1}`,
-      isPrimary: index === 0 // Mark first image as primary by default
-    }));
+    // Initialize variables
+    let homeImage = null;
+    let images = [];
+
+    // Handle home image
+    if (req.files['homeImage'] && req.files['homeImage'][0]) {
+      const homeImageFile = req.files['homeImage'][0];
+      homeImage = {
+        data: homeImageFile.buffer.toString('base64'),
+        contentType: homeImageFile.mimetype,
+        filename: homeImageFile.originalname,
+        size: homeImageFile.size,
+        alt: req.body.alt || 'Property main image',
+        uploadDate: new Date(),
+        isPrimary: true // Set as primary by default
+      };
+    }
+
+    // Process other images
+    if (req.files['images']) {
+      images = req.files['images'].map((file, index) => ({
+        data: file.buffer.toString('base64'),
+        contentType: file.mimetype,
+        filename: file.originalname,
+        size: file.size,
+        alt: req.body.alt || `Property image ${index + 1}`,
+        isPrimary: !homeImage && index === 0 // First image is primary only if no homeImage
+      }));
+    }
 
     // Create property with all data
     const property = new Property({
       ...req.body,
-      images: images
+      homeImage,
+      images
     });
 
     await property.save();
@@ -31,6 +52,9 @@ exports.createProperty = async (req, res) => {
       property: {
         _id: property._id,
         title: property.title,
+        homeImage: property.homeImage ? {
+          filename: property.homeImage.filename
+        } : null,
         images: property.images.map(img => ({
           _id: img._id,
           isPrimary: img.isPrimary,
@@ -40,7 +64,7 @@ exports.createProperty = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating property:', error);
+    console.error('Error creating property:', error.stack);
     res.status(400).json({
       success: false,
       message: error.message || 'Failed to create property'
@@ -76,6 +100,7 @@ exports.getAllProperties = async (req, res) => {
       googleMap: p.googleMap,
       location: p.location,
       propertyDetails: p.propertyDetails,
+      homeImage: p.homeImage, // includes base64, metadata
       images: p.images, // includes base64, metadata
       contactInfo: p.contactInfo,
       createdAt: p.createdAt,
@@ -107,99 +132,80 @@ exports.getPropertyById = async (req, res) => {
 };
 
 
+
 exports.updateProperty = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Check if property exists
     const existingProperty = await Property.findById(id);
+
     if (!existingProperty) {
-      return res.status(404).json({
-        success: false,
-        message: 'Property not found'
-      });
+      return res.status(404).json({ message: 'Property not found' });
     }
 
-    // Prepare update data
     const updateData = { ...req.body };
 
-    // Handle image updates if new files were uploaded
-    if (req.files && req.files.length > 0) {
-      const newImages = req.files.map((file, index) => ({
+    // Handle home image update
+    if (req.files['homeImage'] && req.files['homeImage'][0]) {
+      const homeImageFile = req.files['homeImage'][0];
+      updateData.homeImage = {
+        data: homeImageFile.buffer.toString('base64'),
+        contentType: homeImageFile.mimetype,
+        filename: homeImageFile.originalname,
+        size: homeImageFile.size,
+        alt: req.body.alt || 'Home Image',
+        uploadDate: new Date()
+      };
+    } else if (req.body.existingHomeImage) {
+      updateData.homeImage = existingProperty.homeImage;
+    }
+
+    // Handle additional images
+    if (req.files['images']) {
+      const newImages = req.files['images'].map(file => ({
         data: file.buffer.toString('base64'),
         contentType: file.mimetype,
         filename: file.originalname,
         size: file.size,
-        alt: req.body.alt || `Property image ${index + 1}`,
-        isPrimary: index === 0 // Mark first new image as primary
+        alt: req.body.alt || 'Property image',
+        isPrimary: false
       }));
 
-      // Handle image replacement strategy
       if (req.body.replaceImages === 'true') {
-        // Replace all existing images with new ones
         updateData.images = newImages;
       } else {
-        // Append new images to existing ones
         updateData.images = [...existingProperty.images, ...newImages];
-
-        // If there were no existing images, make first new image primary
-        if (existingProperty.images.length === 0) {
-          updateData.images[0].isPrimary = true;
-        }
       }
+    } else if (req.body.existingImages) {
+      updateData.images = existingProperty.images.filter(img =>
+        req.body.existingImages.includes(img._id.toString())
+      );
     }
 
-    // Handle primary image update if specified
-    if (req.body.primaryImageId && updateData.images) {
-      updateData.images = updateData.images.map(img => ({
-        ...img,
-        isPrimary: img._id ? img._id.toString() === req.body.primaryImageId : false
-      }));
-    }
+    // Parse nested fields from FormData
+    updateData.location = req.body.location || existingProperty.location;
+    updateData.propertyDetails = req.body.propertyDetails || existingProperty.propertyDetails;
+    updateData.contactInfo = req.body.contactInfo || existingProperty.contactInfo;
 
     // Update the property
     const updatedProperty = await Property.findByIdAndUpdate(
       id,
-      updateData,
-      {
-        new: true, // Return updated document
-        runValidators: true // Run schema validations
-      }
+      { $set: updateData },
+      { new: true, runValidators: true }
     );
 
     res.json({
       success: true,
       message: 'Property updated successfully',
-      property: {
-        _id: updatedProperty._id,
-        title: updatedProperty.title,
-        price: updatedProperty.price,
-        propertyType: updatedProperty.propertyType,
-        googleMap: updatedProperty.googleMap,
-        location: updatedProperty.location,
-        propertyDetails: updatedProperty.propertyDetails,
-        images: updatedProperty.images.map(img => ({
-          _id: img._id,
-          isPrimary: img.isPrimary,
-          filename: img.filename,
-          size: img.size,
-          contentType: img.contentType
-        })),
-        contactInfo: updatedProperty.contactInfo,
-        createdAt: updatedProperty.createdAt,
-        updatedAt: updatedProperty.updatedAt
-      }
+      property: updatedProperty
     });
-
   } catch (error) {
-    console.error('Error updating property:', error);
+    console.error('Error updating property:', error.stack);
     res.status(400).json({
       success: false,
       message: error.message || 'Failed to update property'
     });
   }
 };
-
 exports.deleteProperty = async (req, res) => {
   try {
     const deleted = await Property.findByIdAndDelete(req.params.id);
